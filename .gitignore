@@ -1,0 +1,32 @@
+# Ignore build and distribution directories
+/build/
+/dist/
+/doc/
+/test/reports/
+
+# Ignore dependency libraries
+/lib/*.jar
+
+# Ignore compiled Java classes
+**/*.class
+
+# Ignore IDE and editor configuration files
+/.idea/
+*.iml
+/.vscode/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temporary files
+/logs/
+*.log
+*.tmp
+
+# Ignore Javadoc-generated files
+/docs/api/
+
+# Ignore Ant backup files
+build.xml~
+
