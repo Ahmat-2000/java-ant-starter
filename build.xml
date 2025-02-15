@@ -1,0 +1,152 @@
+<project name="Java-Ant-Template" default="run" basedir=".">
+    
+    <!-- ==================== Project Metadata =========================== -->
+
+    <property name="app.name"      value="Java-Ant-App" />
+    <property name="app.version"   value="1.0"/>
+    <property name="app.fullname"  value="${app.name}-${app.version}"/>
+
+    <!-- ==================== Directory Paths =========================== -->
+
+    <property name="src.dir"        value="src"/>
+    <property name="test.src.dir"   value="test"/>
+    <property name="build.dir"      value="build"/>
+    <property name="build.test.dir" value="build/test"/>
+    <property name="dist.dir"       value="dist"/>
+    <property name="lib.dir"        value="lib"/>
+    <property name="docs.dir"       value="doc"/>
+    <property name="resources.dir"  value="src/resources"/>
+    <property name="mainClass"      value="MainApp"/>
+
+    <!-- ==================== Compilation Options =========================== -->
+
+    <property name="javac.encoding"      value="UTF-8"/>
+    <property name="compile.debug"       value="true"/>
+    <property name="compile.deprecation" value="false"/>
+    <property name="compile.optimize"    value="true"/>
+
+    <!-- ==================== Classpath =========================== -->
+
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- ==================== Clean Target ==================================== -->
+
+    <target name="clean" description="Delete old build and dist directories">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+        <delete dir="${docs.dir}"/>
+        <delete dir="${build.test.dir}"/>
+    </target>
+
+    <!-- ==================== Prepare Target ================================== -->
+
+    <target name="prepare" description="Create necessary directories">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${docs.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+    </target>
+
+    <!-- ==================== Compile Source Code ================================== -->
+
+    <target name="compile" depends="clean, prepare" description="Compile Java source files">
+        <javac srcdir="${src.dir}"
+               destdir="${build.dir}"
+               debug="${compile.debug}"
+               deprecation="${compile.deprecation}"
+               optimize="${compile.optimize}"
+               encoding="${javac.encoding}"
+               includeantruntime="false">
+            <classpath refid="compile.classpath"/>
+        </javac>
+
+        <!-- Copy resources -->
+        <copy todir="${build.dir}">
+            <fileset dir="${resources.dir}" excludes="**/*.java"/>
+        </copy>
+    </target>
+
+    <!-- ==================== Compile Tests ===================================== -->
+
+    <target name="compile-test" depends="compile" description="Compile JUnit tests">
+        <javac srcdir="${test.src.dir}"
+               destdir="${build.test.dir}"
+               debug="${compile.debug}"
+               encoding="${javac.encoding}"
+               includeantruntime="false">
+            <classpath>
+                <pathelement location="${build.dir}"/>
+                <path refid="compile.classpath"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <!-- ==================== JAR Packaging ===================================== -->
+
+    <target name="dist" depends="compile" description="Create application JAR file">
+        <mkdir dir="${dist.dir}/lib"/>
+        
+        <!-- Copy dependencies -->
+        <copy todir="${dist.dir}/lib">
+            <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        </copy>
+
+        <!-- Create application JAR -->
+        <jar jarfile="${dist.dir}/${app.fullname}.jar" basedir="${build.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="${mainClass}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- ==================== Javadoc Documentation ================================== -->
+
+    <target name="javadoc" depends="compile" description="Generate Javadoc API documentation">
+        <javadoc sourcepath="${src.dir}"
+            destdir="${docs.dir}"
+            packagenames="*"
+            failonerror="false"
+            additionalparam="-Xdoclint:none">
+            <classpath refid="compile.classpath"/>
+        </javadoc>
+    </target>
+
+    <!-- ==================== Unit Testing (JUnit 5) ===================================== -->
+
+    <target name="test" depends="compile-test" description="Run JUnit 5 tests">
+        <mkdir dir="${build.test.dir}/reports"/>
+
+        <java classname="org.junit.platform.console.ConsoleLauncher" fork="true">
+            <classpath>
+                <pathelement location="${build.test.dir}"/>
+                <pathelement location="${build.dir}"/>
+                <fileset dir="${lib.dir}" includes="junit-platform-console-standalone-1.9.2.jar"/>
+            </classpath>
+            <arg line="--class-path ${build.test.dir} --scan-class-path"/>
+        </java>
+    </target>
+
+    <!-- ==================== Generate JUnit Report ============================= -->
+
+    <target name="junitreport" depends="test" description="Generate test reports">
+        <junitreport todir="${build.test.dir}/reports">
+            <fileset dir="${build.test.dir}/reports" includes="TEST-*.xml"/>
+            <report format="frames" todir="${build.test.dir}/reports"/>
+        </junitreport>
+    </target> 
+
+    <!-- ==================== Run Application ================================== -->
+
+    <target name="run" depends="dist" description="Run the Java application">
+        <java jar="${dist.dir}/${app.fullname}.jar" fork="true" />
+    </target>
+
+    <!-- ==================== All Target ====================================== -->
+
+    <target name="all" depends="dist, junitreport, javadoc" description="Clean build and dist directories, then compile, test, and generate docs"/>
+
+</project>
